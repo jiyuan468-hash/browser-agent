@@ -1,0 +1,24 @@
+[project]
+name = "browser-agent"
+version = "0.1.0"
+description = "AI-powered browser automation agent built on browser-use"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [{name = "browser-agent", email = "you@example.com"}]
+dependencies = [
+    "browser-use>=0.13.0",
+    "openai>=1.0.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+yaml = ["pyyaml>=6.0"]
+dev = ["pytest>=8.0", "ruff>=0.4.0"]
+
+[project.scripts]
+browser-agent = "browser_agent.__main__:main"
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.backends._legacy:_Backend"

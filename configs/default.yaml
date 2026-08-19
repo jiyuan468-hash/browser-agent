@@ -1,0 +1,12 @@
+# BrowserAgent default configuration
+llm:
+  model: agnes-2.5-pro
+  api_key: ""
+  base_url: "http://127.0.0.1:57321/v1"
+  max_steps: 20
+
+browser:
+  headless: true
+  wait_time: 1.0
+  screenshot_on_error: true
+  output_dir: "output"
