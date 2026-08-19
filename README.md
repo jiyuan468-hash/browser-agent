@@ -73,6 +73,19 @@ Edit \`configs/default.yaml\` or set environment variables:
 | AGENT_MAX_STEPS | 20 | Max steps per task |
 | AGENT_HEADLESS | true | Run browser headless |
 
+
+## Deploy to Streamlit Cloud
+
+1. Go to https://streamlit.io/cloud and sign in with GitHub
+2. Click **New app** and select this repository
+3. Set **Main file path** to pp.py
+4. Click **Deploy**
+5. Add environment variables in Settings:
+   - AGENT_API_KEY = your API key
+   - AGENT_BASE_URL = your OpenAI-compatible API endpoint
+
+## Project Structure
+
 ## Project Structure
 
 \`\`\`
