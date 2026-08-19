@@ -1,7 +1,10 @@
+"""AI Browser Agent - Streamlit Web UI"""
 import asyncio
-import os
 import json
+import os
+import threading
 import uuid
+import queue
 import streamlit as st
 from browser_use import Agent, ChatOpenAI
 
@@ -36,11 +39,39 @@ def format_result(result):
             output += item.extracted_content + "\n"
     return output if output else "**Task completed.**"
 
-async def run_agent(task, task_id):
-    llm = get_llm()
-    agent = Agent(task=task, llm=llm)
-    result = await agent.run(max_steps=st.session_state.max_steps)
-    st.session_state[task_id] = result
+async def run_agent(task, q):
+    try:
+        llm = get_llm()
+        agent = Agent(task=task, llm=llm)
+        result = await agent.run(max_steps=st.session_state.max_steps)
+        q.put(("done", result))
+    except Exception as e:
+        q.put(("error", e))
+
+def start_task(task, task_id):
+    q = queue.Queue()
+    st.session_state[task_id + "_q"] = q
+    t = threading.Thread(target=run_agent, args=(task, q), daemon=True)
+    t.start()
+    st.session_state[task_id + "_running"] = True
+
+def check_task(task_id):
+    q_key = task_id + "_q"
+    running_key = task_id + "_running"
+    if not st.session_state.get(running_key, False):
+        return None
+    q = st.session_state.get(q_key)
+    if q is None:
+        return None
+    try:
+        status, value = q.get(timeout=0.01)
+        st.session_state[task_id] = value
+        st.session_state[running_key] = False
+        if status == "error":
+            return ("error", value)
+        return ("done", value)
+    except queue.Empty:
+        return None
 
 tab1, tab2, tab3 = st.tabs(["Search", "Fill Form", "Extract"])
 
@@ -50,19 +81,19 @@ with tab1:
     top_n = st.slider("Top results", 1, 20, 5)
     if st.button("Run Search", type="primary"):
         tid = str(uuid.uuid4())
-        st.session_state[tid] = asyncio.get_event_loop().create_task(
-            run_agent(f'Search for "{query}" and summarize the top {top_n} results', tid)
-        )
-    for tid, val in list(st.session_state.items()):
-        if isinstance(val, asyncio.Task) and not val.done():
-            st.spinner("Searching the web...")
-            break
-        elif isinstance(val, Exception):
-            st.error(f"Error: {val}")
-            del st.session_state[tid]
-        elif not isinstance(val, asyncio.Task):
+        st.session_state[tid] = None
+        st.session_state[tid + "_running"] = False
+        start_task(f'Search for "{query}" and summarize the top {top_n} results', tid)
+    r = check_task(tid)
+    if r is None and st.session_state.get(tid + "_running", False):
+        st.spinner("Searching the web...")
+    elif r is not None:
+        if r[0] == "error":
+            st.error(f"Error: {r[1]}")
+            st.session_state[tid + "_running"] = False
+        else:
             st.success("Done!")
-            st.markdown(format_result(val))
+            st.markdown(format_result(r[1]))
 
 with tab2:
     st.subheader("Fill a Form")
@@ -78,20 +109,20 @@ with tab2:
             st.error("Please provide URL and valid JSON data")
         else:
             tid = str(uuid.uuid4())
+            st.session_state[tid] = None
+            st.session_state[tid + "_running"] = False
             fields = ", ".join(f"{k}={v}" for k, v in data.items())
-            st.session_state[tid] = asyncio.get_event_loop().create_task(
-                run_agent(f"Go to {form_url} and fill in the form with: {fields}", tid)
-            )
-    for tid, val in list(st.session_state.items()):
-        if isinstance(val, asyncio.Task) and not val.done():
-            st.spinner("Filling the form...")
-            break
-        elif isinstance(val, Exception):
-            st.error(f"Error: {val}")
-            del st.session_state[tid]
-        elif not isinstance(val, asyncio.Task):
+            start_task(f"Go to {form_url} and fill in the form with: {fields}", tid)
+    r = check_task(tid)
+    if r is None and st.session_state.get(tid + "_running", False):
+        st.spinner("Filling the form...")
+    elif r is not None:
+        if r[0] == "error":
+            st.error(f"Error: {r[1]}")
+            st.session_state[tid + "_running"] = False
+        else:
             st.success("Done!")
-            st.markdown(format_result(val))
+            st.markdown(format_result(r[1]))
 
 with tab3:
     st.subheader("Extract Data")
@@ -103,16 +134,16 @@ with tab3:
             st.error("Please provide URL and CSS selector")
         else:
             tid = str(uuid.uuid4())
-            st.session_state[tid] = asyncio.get_event_loop().create_task(
-                run_agent(f'Go to {extract_url}, find all elements matching "{selector}", extract their text, and return up to {limit} results', tid)
-            )
-    for tid, val in list(st.session_state.items()):
-        if isinstance(val, asyncio.Task) and not val.done():
-            st.spinner("Extracting data...")
-            break
-        elif isinstance(val, Exception):
-            st.error(f"Error: {val}")
-            del st.session_state[tid]
-        elif not isinstance(val, asyncio.Task):
+            st.session_state[tid] = None
+            st.session_state[tid + "_running"] = False
+            start_task(f'Go to {extract_url}, find all elements matching "{selector}", extract their text, and return up to {limit} results', tid)
+    r = check_task(tid)
+    if r is None and st.session_state.get(tid + "_running", False):
+        st.spinner("Extracting data...")
+    elif r is not None:
+        if r[0] == "error":
+            st.error(f"Error: {r[1]}")
+            st.session_state[tid + "_running"] = False
+        else:
             st.success("Done!")
-            st.markdown(format_result(val))
+            st.markdown(format_result(r[1]))
