@@ -17,10 +17,10 @@ st.markdown("---")
 
 with st.sidebar:
     st.header("Configuration")
-    st.session_state.model = st.selectbox("LLM Model", ["agnes-2.5-pro", "agnes-2.5-flash", "agnes-2.0-flash"], index=0)
+    st.session_state.model = st.selectbox("LLM Model", ["deepseek-chat", "deepseek-coder", "deepseek-v3"], index=0)
     st.session_state.max_steps = st.slider("Max Steps", 5, 100, 20)
     st.session_state.headless = st.checkbox("Headless Mode", value=True)
-    st.markdown("*Uses OpenAI-compatible API (set AGENT_BASE_URL env var)*")
+    st.markdown("*Uses DeepSeek API (set AGENT_API_KEY env var)*")
 
 def get_llm():
     return ChatOpenAI(
