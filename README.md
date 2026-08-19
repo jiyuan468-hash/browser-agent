@@ -94,6 +94,22 @@ Edit \`configs/default.yaml\` or set environment variables:
 └── .gitignore
 \`\`\`
 
+
+## Web UI (Streamlit)
+
+Run the interactive web app:
+\\ash
+pip install streamlit
+streamlit run app.py
+\Then open http://localhost:8501 in your browser.
+
+Features:
+- **Search** — AI searches the web and summarizes results
+- **Fill Form** — Fill web forms with JSON data
+- **Extract** — Extract data using CSS selectors
+
+Share with others by deploying to [Render](https://render.com) or [Railway](https://railway.app). See \Dockerfile\ for container deployment.
+
 ## Requirements
 
 - Python 3.10+

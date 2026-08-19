@@ -1,4 +1,5 @@
 import asyncio
+import os
 import json
 import uuid
 import streamlit as st
@@ -16,13 +17,13 @@ with st.sidebar:
     st.session_state.model = st.selectbox("LLM Model", ["agnes-2.5-pro", "agnes-2.5-flash", "agnes-2.0-flash"], index=0)
     st.session_state.max_steps = st.slider("Max Steps", 5, 100, 20)
     st.session_state.headless = st.checkbox("Headless Mode", value=True)
-    st.markdown("*Uses Codex CLI local proxy at 127.0.0.1:57321*")
+    st.markdown("*Uses OpenAI-compatible API (set AGENT_BASE_URL env var)*")
 
 def get_llm():
     return ChatOpenAI(
         model=st.session_state.model,
-        api_key="fallback-key",
-        base_url="http://127.0.0.1:57321/v1",
+        api_key=os.getenv("AGENT_API_KEY", "fallback-key"),
+        base_url=os.getenv("AGENT_BASE_URL", "http://127.0.0.1:57321/v1"),
         dont_force_structured_output=True
     )
 
