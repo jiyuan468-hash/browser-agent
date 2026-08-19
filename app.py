@@ -26,7 +26,7 @@ def get_llm():
     return ChatOpenAI(
         model=st.session_state.model,
         api_key=os.getenv("AGENT_API_KEY", "fallback-key"),
-        base_url=os.getenv("AGENT_BASE_URL", "http://127.0.0.1:57321/v1"),
+        base_url=os.getenv("AGENT_BASE_URL", "https://api.deepseek.com/v1"),
         dont_force_structured_output=True
     )
 
